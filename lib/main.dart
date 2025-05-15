@@ -334,7 +334,7 @@ Future<void> _restoreSession() async {
     // ─────────────── CREA IL DATABASE DELL'UTENTE ───────────────
     final token = AuthSession.token;
     if (token != null && token.isNotEmpty) {
-      final dbName = '${AuthSession.username}-database';
+      final dbName = 'database';
       try {
         await DatabaseService().createDatabase(dbName, token);
         debugPrint('✅ Database utente creato/verificato: $dbName');
@@ -1584,7 +1584,6 @@ print('****');
   List<Product> _filteredProducts = [];
 
   @override
-  @override
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
@@ -1599,6 +1598,21 @@ print('****');
     Timer.periodic(Duration(minutes: 5), (timer) {
       checkOverdueLoans();
     });
+
+        // ─────────────── CREA IL DATABASE DELL'UTENTE ───────────────
+    final token = AuthSession.token;
+    if (token != null && token.isNotEmpty) {
+      final dbName = 'database';
+      try {
+        DatabaseService().createDatabase(dbName, token);
+        debugPrint('✅ Database utente creato/verificato: $dbName');
+      } catch (e) {
+        debugPrint('⚠️ Impossibile creare il database utente: $e');
+        // qui puoi decidere se interrompere o ignorare
+      }
+    }
+    // ───────────────────────────────────────────────────────────────
+
   }
 
   void _filterProducts() {

@@ -70,6 +70,24 @@ class AuthSession {
     html.window.localStorage['token'] = newAccess;
     api.lastAccessToken = newAccess;*/
   }
+
+    /// E-mail dell’utente corrente (null se non disponibile)
+  static String? get email {
+    if (_rawUser == null) return null;
+    final js = jsonDecode(_rawUser!) as Map<String, dynamic>;
+    return js['email'] as String?;
+  }
+
+  /// L’utente è admin se l’e-mail corrisponde a una di quelle abilitate
+  static bool get isAdmin {
+    const adminEmails = {
+      'Sabato.aprea@enea.it',
+      'apsab18@gmail.com',
+      'sansalonesimone0@gmail.com'
+    };
+    return adminEmails.contains(email);
+  }
+
     /// Invalida la sessione corrente
   static Future<void> logout() async {
     html.window.localStorage
@@ -1583,6 +1601,9 @@ print('****');
   final TextEditingController _searchController = TextEditingController();
   List<Product> _filteredProducts = [];
 
+    late final bool _isAdmin;
+    
+    
   @override
   void initState() {
     super.initState();
@@ -1594,6 +1615,8 @@ print('****');
       scheduleDailyExpiryCheck(products); // controllo giornaliero
     });
 
+
+_isAdmin = AuthSession.isAdmin;   // <── UNICA LINEA AGGIUNTA
     // Avvia un timer periodico (ogni 5 minuti) per controllare i prestiti scaduti
     Timer.periodic(Duration(minutes: 5), (timer) {
       checkOverdueLoans();
@@ -1865,10 +1888,10 @@ Widget _buildDrawer(BuildContext context) {
                     context,
                     MaterialPageRoute(
                       builder: (_) => LoanPage(
-                        
+                        readOnly: !_isAdmin,
                         loans: loans,
                         products: products,
-                        onNewLoan: (loan) {
+                        onNewLoan: _isAdmin ? (loan) {
                           setState(() {
                             loans.add(loan);
                             addLog('prestato',
@@ -1880,8 +1903,8 @@ Widget _buildDrawer(BuildContext context) {
                             saveWarehouses();
                             scheduleLoanReturnNotification(loan);
                           });
-                        },
-                        onReturn: (updatedLoan) {
+                        } : (loan) {},
+                        onReturn: _isAdmin ? (updatedLoan) {
                           setState(() {
                             final index = loans.indexWhere((l) =>
                                 l.casCode == updatedLoan.casCode &&
@@ -1909,7 +1932,7 @@ Widget _buildDrawer(BuildContext context) {
                               saveWarehouses();
                             }
                           });
-                        },
+                        } : (updatedLoan) {},
                       ),
                     ),
                   );
@@ -2072,20 +2095,18 @@ Widget _buildDrawer(BuildContext context) {
                 });
               }
             },
-            itemBuilder: (context) {
-              return _warehouses.keys.map((name) {
-                return PopupMenuItem(
-                  value: name,
-                  child: Text(name),
-                );
-              }).toList()
-                ..add(
-                  const PopupMenuItem(
-                    value: '__new__',
-                    child: Text('➕ Nuovo magazzino'),
-                  ),
-                );
-            },
+    itemBuilder: (context) {
+      final items = _warehouses.keys
+          .map((n) => PopupMenuItem(value: n, child: Text(n)))
+          .toList();
+      if (_isAdmin) {
+        items.add(const PopupMenuItem(
+          value: '__new__',
+          child: Text('➕ Nuovo magazzino'),
+        ));
+      }
+      return items;
+    },
             icon: const Icon(Icons.store),
             tooltip: 'Cambia magazzino',
           ),
@@ -2099,26 +2120,33 @@ Widget _buildDrawer(BuildContext context) {
             tooltip: 'Esporta tutto in PDF',
             onPressed: () => exportEverythingToPDF(context, products, loans),
           ),
-          IconButton(
-            icon: const Icon(Icons.upload_file),
-            onPressed: () => importFromCSV(),
-            tooltip: 'Importa da CSV',
-          ),
+  // ▶︎ IMPORT CSV (modifica dati)
+  if (_isAdmin)
+    IconButton(
+      icon: const Icon(Icons.upload_file),
+      tooltip: 'Importa da CSV',
+      onPressed: importFromCSV,
+    ),
+
           IconButton(
             icon: const Icon(Icons.backup),
             onPressed: () => exportWarehousesAsJson(context, _warehouses),
             tooltip: 'Esporta Backup JSON',
           ),
-          IconButton(
-            icon: const Icon(Icons.restore),
-            onPressed: () => importWarehousesFromJson(context),
-            tooltip: 'Importa Backup JSON',
-          ),
-          IconButton(
-            icon: const Icon(Icons.edit),
-            tooltip: 'Gestisci magazzini',
-            onPressed: _manageWarehouses,
-          ),
+  // ▶︎ IMPORT BACKUP JSON
+  if (_isAdmin)
+    IconButton(
+      icon: const Icon(Icons.restore),
+      tooltip: 'Importa Backup JSON',
+      onPressed: () => importWarehousesFromJson(context),
+    ),
+  // ▶︎ GESTIONE MAGAZZINI
+  if (_isAdmin)
+    IconButton(
+      icon: const Icon(Icons.edit),
+      tooltip: 'Gestisci magazzini',
+      onPressed: _manageWarehouses,
+    ),
           IconButton(
             icon: Icon(_isTableView ? Icons.view_list : Icons.table_chart),
             tooltip: _isTableView ? 'Vista lista' : 'Vista tabella',
@@ -2350,7 +2378,7 @@ Widget _buildDrawer(BuildContext context) {
                                               );
                                             },
                                           ),
-                                          IconButton(
+                                          if(_isAdmin) IconButton(
                                             icon: const Icon(Icons.edit),
                                             onPressed: () async {
                                               final updated = await Navigator
@@ -2368,6 +2396,7 @@ Widget _buildDrawer(BuildContext context) {
                                               }
                                             },
                                           ),
+                                          if(_isAdmin) 
                                           IconButton(
                                             icon: const Icon(Icons.delete,
                                                 color: Colors.red),
@@ -2385,8 +2414,9 @@ Widget _buildDrawer(BuildContext context) {
                               itemCount: _filteredProducts.length,
                               itemBuilder: (context, index) {
                                 return ProductCard(
+                                  isAdmin : _isAdmin,     
                                   product: _filteredProducts[index],
-                                  onLoan: (product, loan) {
+                                  onLoan: _isAdmin ? (product, loan) {
                                     setState(() {
                                       loans.add(loan);
                                       addLog('prestato',
@@ -2397,7 +2427,7 @@ Widget _buildDrawer(BuildContext context) {
                                     saveWarehouses();
                                     saveWarehouses();
                                     scheduleLoanReturnNotification(loan);
-                                  },
+                                  } : null,
                                 );
                               },
                             ),
@@ -2441,6 +2471,7 @@ Widget _buildDrawer(BuildContext context) {
               },
             ),
             const SizedBox(width: 12),
+            if(_isAdmin)
             FloatingActionButton(
               heroTag: 'fab_add',
               tooltip: 'Aggiungi prodotto',

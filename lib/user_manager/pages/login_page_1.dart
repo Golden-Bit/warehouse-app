@@ -133,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
         backgroundColor: Colors.white,
         body: Center(
           child: Image.network(
-            'https://static.wixstatic.com/media/63b1fb_396f7f30ead14addb9ef5709847b1c17~mv2.png',
+            '',
             width: 120,
             height: 120,
             fit: BoxFit.contain,

@@ -11,6 +11,7 @@ class LoanPage extends StatefulWidget {
   final List<Product> products;          // ← NEW
   final Function(Loan loan) onNewLoan;
   final Function(Loan loan) onReturn;
+  final bool readOnly;
 
   const LoanPage({
     super.key,
@@ -18,6 +19,7 @@ class LoanPage extends StatefulWidget {
     required this.products,             // ← NEW
     required this.onNewLoan,
     required this.onReturn,
+    required this.readOnly,
   });
 
   @override
@@ -211,11 +213,11 @@ void dispose() {
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildLoanList(_activeLoans, canReturn: true),
+          _buildLoanList(_activeLoans, canReturn: !widget.readOnly),
           _buildLoanList(_returnedLoans),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: widget.readOnly ? null : FloatingActionButton(
         onPressed: _showNewLoanDialog,
         tooltip: 'Nuovo Prestito',
         child: const Icon(Icons.add),

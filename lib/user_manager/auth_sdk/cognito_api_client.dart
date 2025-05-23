@@ -81,7 +81,8 @@ class UserNotConfirmedException implements Exception {
 class CognitoApiClient {
   // Imposta qui il tuo endpoint base; ad esempio, se la tua API
   // gira in locale su http://localhost:8000:
-  static const String baseUrl = 'https://teatek-llm.theia-innovation.com/auth';
+  //static const String baseUrl = 'https://teatek-llm.theia-innovation.com/auth';
+static const String baseUrl = 'https://www.goldbitweb.com/auth';
 
   // Variabile per salvare l'ultimo access token e la sua scadenza
   String? lastAccessToken;

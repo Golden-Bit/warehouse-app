@@ -5,7 +5,7 @@ import 'database_model.dart';
 class DatabaseService {
   // Attenzione: metti l'URL del tuo FastAPI reale
   //String baseUrl = 'https://teatek-llm.theia-innovation.com/database/v1/mongo';
-  String baseUrl = 'https://teatek-llm.theia-innovation.com/database/v1/mongo';
+  String baseUrl = 'https://www.goldbitweb.com/database/v1/mongo';
 
   Future<List<Database>> fetchDatabases(String token) async {
     // Passiamo il token come query param: ?token=$token
